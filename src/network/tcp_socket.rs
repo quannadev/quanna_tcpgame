@@ -4,6 +4,7 @@ use std::net::TcpListener;
 pub struct TCPSocket {
     pub socket: TcpListener,
 }
+
 impl TCPSocket {
     pub fn new(addr: &str) -> Self {
         let socket = TcpListener::bind(addr).expect("Bind tcp socket error");
