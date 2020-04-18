@@ -1,11 +1,23 @@
-use amethyst::ecs::Write;
-use amethyst::network::simulation::TransportResource;
+// use crate::managers::connections::SenderType;
+// use amethyst::ecs::Write;
+// use amethyst::network::simulation::TransportResource;
 use serde_json::Error as SerdeError;
-// use amethyst::Result as AmethystResult;
+use std::net::SocketAddr;
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub enum MessageTags {
+    None,
+    Join,
+    Exit,
+    Config,
+    Login,
+    Register,
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Message {
-    message: String,
+    pub tag: MessageTags,
+    pub data: String,
 }
 
 impl Message {
@@ -18,23 +30,25 @@ impl Message {
         serde_json::to_vec(self).unwrap()
     }
 
-    pub fn response(&self) -> Vec<u8> {
-        let message = format!("confirm on receipt: {}", self.message);
-        let msg = Message { message };
-        serde_json::to_vec(&msg).unwrap()
+    pub fn join_msg(addr: &SocketAddr) -> Self {
+        Self {
+            tag: MessageTags::Join,
+            data: addr.to_string(),
+        }
+    }
+
+    pub fn exit_msg(addr: &SocketAddr) -> Self {
+        Self {
+            tag: MessageTags::Exit,
+            data: addr.to_string(),
+        }
     }
 }
 
-pub struct MessageManager<'a> {
-    pub sender: &'a Write<'a, TransportResource>,
-}
-
-impl<'a> MessageManager<'a> {
-    pub fn init(sender: &'a Write<'a, TransportResource>) -> Self {
-        MessageManager { sender }
-    }
-
-    pub fn parser(&self, payload: &[u8]) -> Option<Message> {
+#[derive(Default)]
+pub struct MessageManager;
+impl MessageManager {
+    pub fn parser(&mut self, payload: &[u8]) -> Option<Message> {
         let txt = std::str::from_utf8(payload).unwrap();
         let raw_msg = txt.replace("\\", "");
         let msg = Message::parse_struct(&raw_msg);

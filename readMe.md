@@ -1,8 +1,11 @@
 ### TCP Socket Server
 
+
 ### Dev
 ```bash
 - cp .env.example .env
+- diesel setup
+- diesel migration run
 - cargo run
 ```
 ### Client Connect

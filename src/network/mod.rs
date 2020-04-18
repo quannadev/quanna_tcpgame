@@ -9,22 +9,35 @@ use amethyst::utils::application_root_dir;
 use std::time::Duration;
 
 mod receive_message;
-mod sender_message;
 mod states;
 mod tcp_socket;
 
+use crate::database::{MysqlDb, RedisDb};
 pub use config::Config;
 use receive_message::SpamReceiveBundle;
 use states::GameState;
 use tcp_socket::TCPSocket;
 
-#[derive(Debug)]
-pub struct Networking;
+pub struct Networking {
+    pub config: Config,
+    pub redis: RedisDb,
+    pub mysql: MysqlDb,
+}
 
 impl Networking {
-    pub fn init(config: Config) {
-        let socket_addr = config.addr.as_str();
-        let socket = TCPSocket::new(socket_addr);
+    pub fn new(config: Config) {
+        let redis = RedisDb::init(config.redis_uri.as_str());
+        let mysql = MysqlDb::init(config.mysql_uri.as_str());
+        Self {
+            config: config.clone(),
+            redis: redis.clone(),
+            mysql: mysql.clone(),
+        };
+        Self::init(config, redis, mysql)
+    }
+
+    fn init(config: Config, redis: RedisDb, mysql: MysqlDb) {
+        let socket = TCPSocket::new(config.addr.as_str());
         let assets_dir = application_root_dir().unwrap().join("./");
 
         let buffer_size = config.buffer_size;
@@ -34,7 +47,7 @@ impl Networking {
         let game_data = GameDataBuilder::default()
             .with_bundle(tcp_bundle)
             .unwrap()
-            .with_bundle(SpamReceiveBundle)
+            .with_bundle(SpamReceiveBundle { redis, mysql })
             .unwrap();
 
         let duration = Duration::from_millis(2);

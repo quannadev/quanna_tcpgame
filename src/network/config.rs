@@ -8,6 +8,7 @@ pub struct Config {
     pub buffer_size: usize,
     pub redis_uri: String,
     pub redis_prefix: String,
+    pub mysql_uri: String,
 }
 
 impl Default for Config {
@@ -16,7 +17,8 @@ impl Default for Config {
         let addr = "127.0.0.1:4567".to_string();
         let redis_uri = Self::get_env("REDIS_URI");
         let redis_prefix = Self::get_env("REDIS_PREFIX");
-        Self::internal_init(addr, redis_uri, redis_prefix)
+        let mysql_uri = Self::get_env("DATABASE_URL");
+        Self::internal_init(addr, redis_uri, redis_prefix, mysql_uri)
     }
 }
 
@@ -25,7 +27,8 @@ impl Config {
         dotenv::dotenv().ok();
         let redis_uri = Self::get_env("REDIS_URI");
         let redis_prefix = Self::get_env("REDIS_PREFIX");
-        Self::internal_init(addr, redis_uri, redis_prefix)
+        let mysql_uri = Self::get_env("DATABASE_URL");
+        Self::internal_init(addr, redis_uri, redis_prefix, mysql_uri)
     }
 
     pub fn logger_config() -> LoggerConfig {
@@ -46,7 +49,12 @@ impl Config {
         env::var(&key).unwrap_or_else(dotenv_get)
     }
 
-    fn internal_init(addr: String, redis_uri: String, redis_prefix: String) -> Self {
+    fn internal_init(
+        addr: String,
+        redis_uri: String,
+        redis_prefix: String,
+        mysql_uri: String,
+    ) -> Self {
         let cfg = Self::logger_config();
         start_logger(cfg);
 
@@ -55,6 +63,7 @@ impl Config {
             buffer_size: 2048,
             redis_uri,
             redis_prefix,
+            mysql_uri,
         }
     }
 }
