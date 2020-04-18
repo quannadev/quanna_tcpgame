@@ -46,7 +46,7 @@ impl NewUser {
     }
 
     pub fn parser_from_str(txt: &str) -> Option<Self> {
-        match serde_json::from_str::<Self>(txt) {
+        match serde_json::from_str::<Self>(txt.to_lowercase().as_str()) {
             Ok(value) => Some(value),
             _ => None,
         }

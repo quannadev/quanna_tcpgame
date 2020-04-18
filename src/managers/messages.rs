@@ -97,6 +97,7 @@ impl MessageManager {
                                 );
                                 peer_manager.add_peer(peer);
                                 response_msg.status = true;
+                                response_msg.message = Some("Login success".to_string());
                                 response_msg.data = Some(user.to_string());
                                 return sender
                                     .send(owner_addr.clone(), response_msg.to_vec_u8().as_ref());
@@ -106,7 +107,7 @@ impl MessageManager {
                 }
             }
             MessageTags::Register => {
-                response_msg.tag = MessageTags::Login;
+                response_msg.tag = MessageTags::Register;
                 if peer_old.is_some() {
                     let peer_data = peer_old.unwrap();
                 } else {
@@ -127,6 +128,7 @@ impl MessageManager {
                                 );
                                 peer_manager.add_peer(peer);
                                 response_msg.status = true;
+                                response_msg.message = Some("Register success".to_string());
                                 response_msg.data = Some(user.to_string());
                                 return sender
                                     .send(owner_addr.clone(), response_msg.to_vec_u8().as_ref());
