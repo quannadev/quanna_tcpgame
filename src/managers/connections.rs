@@ -2,6 +2,7 @@ use crate::managers::messages::MessageManager;
 use amethyst::{ecs::Write, network::simulation::TransportResource, Result};
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpStream};
+use std::str::from_utf8;
 
 #[derive(Debug, Clone)]
 pub struct ConnectionManager {
@@ -39,7 +40,16 @@ impl ConnectionManager {
         sender: &mut Write<'a, TransportResource>,
     ) {
         let message_manager = MessageManager::init(sender);
-        let _message = message_manager.parser(payload);
+        let message = message_manager.parser(payload);
+        if message.is_some() {
+            let msg_parsed = message.unwrap();
+            sender.send(addr, msg_parsed.to_vec_u8().as_ref())
+        } else {
+            warn!(
+                "message {} invalid",
+                from_utf8(payload).unwrap().replace("\\", "")
+            )
+        }
     }
     pub fn send_all<'a>(&mut self, sender: &mut Write<'a, TransportResource>, payload: &str) {
         for socket in self.list_conn.iter() {

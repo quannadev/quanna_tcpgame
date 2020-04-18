@@ -7,8 +7,9 @@ impl<'a> MessageManager<'a> {
         MessageManager { sender }
     }
     pub fn parser(&self, payload: &[u8]) -> Option<Message> {
-        let txt = std::str::from_utf8(payload).unwrap();
-        let msg = Message::parse_struct(txt);
+        let mut txt = std::str::from_utf8(payload).unwrap();
+        let msg = txt.replace("\\", "");
+        let msg = Message::parse_struct(msg.as_str());
         if msg.is_some() {
             return Some(msg.unwrap());
         }
@@ -27,10 +28,11 @@ impl Message {
             _ => None,
         }
     }
-    pub fn to_vec_u8(&self) -> Option<Vec<u8>> {
-        match serde_json::to_vec(self) {
+    pub fn to_vec_u8(&self) -> Vec<u8> {
+        let value = match serde_json::to_vec(self) {
             Ok(value) => Some(value),
             _ => None,
-        }
+        };
+        value.unwrap()
     }
 }
