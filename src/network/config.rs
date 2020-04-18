@@ -21,7 +21,6 @@ impl Default for Config {
 }
 
 impl Config {
-    #[allow(dead_code)]
     pub fn new(addr: String) -> Self {
         dotenv::dotenv().ok();
         let redis_uri = Self::get_env("REDIS_URI");
