@@ -1,8 +1,8 @@
 use crate::database::{MysqlDb, RedisDb};
 use crate::managers::messages::{Message, MessageManager};
+use crate::managers::PeerManager;
 use amethyst::ecs::Write;
 use amethyst::network::simulation::TransportResource;
-// use std::collections::HashMap;
 use std::net::SocketAddr;
 
 pub type SenderType<'a> = Write<'a, TransportResource>;
@@ -12,6 +12,7 @@ pub struct ConnectionManager {
     pub list_conn: Vec<SocketAddr>,
     pub redis: RedisDb,
     pub mysql: MysqlDb,
+    pub peer_manager: PeerManager,
 }
 
 impl ConnectionManager {
@@ -20,17 +21,18 @@ impl ConnectionManager {
             list_conn: Vec::new(),
             redis,
             mysql,
+            peer_manager: PeerManager::new(),
         }
     }
 
-    pub fn on_connect<'a>(&mut self, addr: &SocketAddr, sender: &mut SenderType) {
+    pub fn on_connect(&mut self, addr: &SocketAddr, sender: &mut Write<TransportResource>) {
         self.list_conn.push(*addr);
         let msg = format!("New connect {}\r\n", &addr);
         info!("{}", msg);
         self.send_without_me(sender, addr, Message::join_msg(&addr))
     }
 
-    pub fn on_disconnect<'a>(&mut self, addr: &SocketAddr, sender: &mut SenderType) {
+    pub fn on_disconnect(&mut self, addr: &SocketAddr, sender: &mut Write<TransportResource>) {
         let idx = self.list_conn.iter().position(|a| a == addr);
 
         if idx.is_some() {
@@ -40,28 +42,30 @@ impl ConnectionManager {
             self.send_without_me(sender, addr, Message::exit_msg(&addr));
         }
 
-        info!("Count socket {}", self.list_conn.len())
+        info!("Count socket {}", self.list_conn.len());
+        info!("Count peer {}", self.peer_manager.list_peers.len());
     }
 
-    pub fn on_message<'a>(&mut self, addr: SocketAddr, payload: &[u8], sender: &mut SenderType) {
-        let message = MessageManager::default().parser(payload);
+    pub fn on_message(
+        &mut self,
+        addr: SocketAddr,
+        payload: &[u8],
+        sender: &mut Write<TransportResource>,
+    ) {
+        let mut message_manager = MessageManager::default();
+        let message = message_manager.parser(payload);
         if message.is_some() {
             let msg_pared = message.unwrap();
-            return sender.send(addr, msg_pared.to_vec_u8().as_ref());
+            return message_manager.message_router(msg_pared, &addr, &mut self.peer_manager);
         }
     }
 
-    pub fn send_all<'a>(&mut self, sender: &mut SenderType, payload: Message) {
+    pub fn send_all(&mut self, sender: &mut Write<TransportResource>, payload: Message) {
         let send_data = |s: &SocketAddr| Self::send_message(*s, payload.clone(), sender);
         self.list_conn.iter().for_each(send_data);
     }
 
-    pub fn send_without_me<'a>(
-        &self,
-        sender: &mut Write<'a, TransportResource>,
-        me: &SocketAddr,
-        payload: Message,
-    ) {
+    pub fn send_without_me(&self, sender: &mut SenderType, me: &SocketAddr, payload: Message) {
         for socket in self.list_conn.iter() {
             if socket.eq(&me) {
                 continue;

@@ -5,7 +5,7 @@ use crate::schema::users;
 use crate::schema::users::dsl::*;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use diesel::result::Error as DielselError;
+use diesel::result::Error as DieselError;
 use diesel::{delete, insert_into, update};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 
@@ -87,7 +87,7 @@ impl CRUD<NewUser> for User {
                 });
                 Ok(user)
             }
-            _ => Err(DielselError::NotFound),
+            _ => Err(DieselError::NotFound),
         }
     }
 
@@ -116,7 +116,7 @@ impl CRUD<NewUser> for User {
                 });
                 Ok(user)
             }
-            _ => Err(DielselError::NotFound),
+            _ => Err(DieselError::NotFound),
         }
     }
 
@@ -132,7 +132,7 @@ impl CRUD<NewUser> for User {
                 });
                 return Self::find_by_name(value.username.clone(), conn, redis);
             }
-            _ => Err(DielselError::NotFound),
+            _ => Err(DieselError::NotFound),
         }
     }
 
@@ -148,7 +148,7 @@ impl CRUD<NewUser> for User {
                 });
                 return Self::find_by_id(uid, conn, redis);
             }
-            _ => Err(DielselError::NotFound),
+            _ => Err(DieselError::NotFound),
         }
     }
 

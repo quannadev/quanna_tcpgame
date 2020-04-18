@@ -1,11 +1,9 @@
 use crate::database::{MysqlDb, RedisDb};
 use crate::managers::connections::ConnectionManager;
-// use crate::network::sender_message::SenderManager;
 use amethyst::core::{bundle::SystemBundle, SystemDesc};
 use amethyst::ecs::{DispatcherBuilder, Read, System, SystemData, World, Write};
 use amethyst::network::simulation::{NetworkSimulationEvent, TransportResource};
 use amethyst::shrev::{EventChannel, ReaderId};
-// use amethyst::prelude::*;
 use amethyst::Result as AmethystResult;
 
 pub struct SpamReceiveBundle {
@@ -49,7 +47,7 @@ pub struct ReceiveSystem {
     pub manager: ConnectionManager,
 }
 
-impl<'a> ReceiveSystem {
+impl ReceiveSystem {
     pub fn new(reader: ReaderId<NetworkSimulationEvent>, manager: ConnectionManager) -> Self {
         Self { reader, manager }
     }

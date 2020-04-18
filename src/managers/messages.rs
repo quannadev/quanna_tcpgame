@@ -1,6 +1,9 @@
 // use crate::managers::connections::SenderType;
 // use amethyst::ecs::Write;
 // use amethyst::network::simulation::TransportResource;
+use crate::managers::connections::SenderType;
+use crate::managers::peer_manager::PeerManager;
+use crate::models::Peer;
 use serde_json::Error as SerdeError;
 use std::net::SocketAddr;
 
@@ -44,7 +47,6 @@ impl Message {
         }
     }
 }
-
 #[derive(Default)]
 pub struct MessageManager;
 impl MessageManager {
@@ -56,6 +58,22 @@ impl MessageManager {
         match msg {
             Ok(message) => Some(message),
             Err(_) => None,
+        }
+    }
+    pub fn message_router(
+        &mut self,
+        msg: Message,
+        owner_addr: &SocketAddr,
+        peer_manager: &mut PeerManager,
+    ) {
+        match msg.tag {
+            MessageTags::Login => {
+                let peer = Peer::new(owner_addr.clone(), None, false);
+                peer_manager.add_peer(peer);
+                info!("Peer size {}", peer_manager.list_peers.len());
+            }
+            MessageTags::Register => {}
+            _ => {}
         }
     }
 }

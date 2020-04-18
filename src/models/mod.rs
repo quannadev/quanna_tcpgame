@@ -1,5 +1,9 @@
+mod peer;
+mod peer_status;
 mod user;
 use crate::database::{MysqlConn, RedisDb, ResultDb};
+pub use peer::Peer;
+pub use peer_status::PeerStatus;
 pub use user::User;
 
 pub trait CRUD<T> {
