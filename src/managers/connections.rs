@@ -1,6 +1,8 @@
+use crate::managers::messages::MessageManager;
 use amethyst::{ecs::Write, network::simulation::TransportResource, Result};
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpStream};
+
 #[derive(Debug, Clone)]
 pub struct ConnectionManager {
     pub list_conn: Vec<SocketAddr>,
@@ -36,7 +38,8 @@ impl ConnectionManager {
         payload: &[u8],
         sender: &mut Write<'a, TransportResource>,
     ) {
-        sender.send(addr, payload);
+        let message_manager = MessageManager::init(sender);
+        let _message = message_manager.parser(payload);
     }
     pub fn send_all<'a>(&mut self, sender: &mut Write<'a, TransportResource>, payload: &str) {
         for socket in self.list_conn.iter() {
