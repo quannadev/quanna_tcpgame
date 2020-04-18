@@ -20,14 +20,16 @@ impl MessageManager {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum MessageTags {
     None,
+    Join,
+    Exit,
     Config,
     Login,
     Register,
 }
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Message {
-    tag: MessageTags,
-    data: String,
+    pub tag: MessageTags,
+    pub data: String,
 }
 
 impl Message {
@@ -35,6 +37,18 @@ impl Message {
         match serde_json::from_str::<Self>(txt) {
             Ok(message) => Some(message),
             _ => None,
+        }
+    }
+    pub fn join_msg(addr: &SocketAddr) -> Self {
+        Self {
+            tag: MessageTags::Join,
+            data: addr.to_string(),
+        }
+    }
+    pub fn exit_msg(addr: &SocketAddr) -> Self {
+        Self {
+            tag: MessageTags::Exit,
+            data: addr.to_string(),
         }
     }
     pub fn to_vec_u8(&self) -> Vec<u8> {

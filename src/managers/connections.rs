@@ -1,5 +1,5 @@
 use crate::database::{MysqlDb, RedisDb};
-use crate::managers::messages::MessageManager;
+use crate::managers::messages::{Message, MessageManager};
 use amethyst::{ecs::Write, network::simulation::TransportResource, Result};
 use std::collections::HashMap;
 use std::net::{SocketAddr, TcpStream};
@@ -23,14 +23,14 @@ impl ConnectionManager {
     pub fn on_connect<'a>(&mut self, addr: &SocketAddr, sender: &mut SenderType) {
         self.list_conn.push(*addr);
         let msg = format!("New connect {}\r\n", &addr);
-        self.send_without_me(sender, addr, msg.as_str())
+        self.send_without_me(sender, addr, Message::join_msg(&addr))
     }
     pub fn on_disconnect<'a>(&mut self, addr: &SocketAddr, sender: &mut SenderType) {
         let idx = self.list_conn.iter().position(|a| a == addr);
         if idx.is_some() {
             self.list_conn.remove(idx.unwrap());
             let msg = format!("Client {} disconnected \r\n", &addr);
-            self.send_without_me(sender, addr, msg.as_str());
+            self.send_without_me(sender, addr, Message::exit_msg(&addr));
         }
 
         info!("Count socket {}", self.list_conn.len())
@@ -39,33 +39,32 @@ impl ConnectionManager {
         let message = MessageManager::default().parser(payload);
         if message.is_some() {
             let msg_pared = message.unwrap();
-
             sender.send(addr, msg_pared.to_vec_u8().as_ref())
         }
     }
-    pub fn send_all<'a>(&mut self, sender: &mut SenderType, payload: &str) {
+    pub fn send_all<'a>(&mut self, sender: &mut SenderType, payload: Message) {
         for socket in self.list_conn.iter() {
-            Self::send_message(*socket, payload.as_bytes(), sender)
+            Self::send_message(*socket, payload.clone(), sender)
         }
     }
     pub fn send_without_me<'a>(
         &self,
         sender: &mut Write<'a, TransportResource>,
         me: &SocketAddr,
-        payload: &str,
+        payload: Message,
     ) {
         for socket in self.list_conn.iter() {
             if socket.eq(&me) {
                 continue;
             }
-            Self::send_message(*socket, payload.as_bytes(), sender)
+            Self::send_message(*socket, payload.clone(), sender)
         }
     }
-    pub fn send_message<'a>(
+    pub fn send_message(
         socket: SocketAddr,
-        payload: &[u8],
-        sender: &mut Write<'a, TransportResource>,
+        payload: Message,
+        sender: &mut Write<TransportResource>,
     ) {
-        sender.send(socket, payload)
+        sender.send(socket, payload.to_vec_u8().as_ref())
     }
 }

@@ -48,11 +48,8 @@ impl NewUser {
             _ => None,
         }
     }
-    pub fn verify_password(&self) -> bool {
-        self.password.len() > 5
-    }
-    pub fn verify_username(&self) -> bool {
-        self.username.len() > 3
+    pub fn validate(&self) -> bool {
+        self.username.len() > 3 && self.password.len() > 5
     }
 }
 impl CRUD<NewUser> for User {
