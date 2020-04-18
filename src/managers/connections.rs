@@ -50,7 +50,7 @@ impl ConnectionManager {
         let message = message_manager.parser(payload);
         if message.is_some() {
             let msg_parsed = message.unwrap();
-            sender.send(addr, msg_parsed.to_vec_u8().as_ref())
+            sender.send(addr, msg_parsed.response().as_ref())
         } else {
             warn!(
                 "message {} invalid",

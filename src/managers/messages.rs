@@ -10,11 +10,18 @@ pub struct Message {
 
 impl Message {
     pub fn parse_struct(txt: &str) -> Result<Self, SerdeError> {
-        serde_json::from_str::<Self>(txt)
+        let msg: Message = serde_json::from_str(txt)?;
+        Ok(msg)
     }
 
     pub fn to_vec_u8(&self) -> Vec<u8> {
         serde_json::to_vec(self).unwrap()
+    }
+
+    pub fn response(&self) -> Vec<u8> {
+        let message = format!("confirm on receipt: {}", self.message);
+        let msg = Message { message };
+        serde_json::to_vec(&msg).unwrap()
     }
 }
 
