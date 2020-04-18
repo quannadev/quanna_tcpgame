@@ -1,3 +1,4 @@
+use crate::database::enums::*;
 use crate::network::Config;
 use r2d2_redis::{
     r2d2::{Pool, PooledConnection},
@@ -7,6 +8,7 @@ use r2d2_redis::{
 
 type Result<T> = std::result::Result<T, ()>;
 pub type RedisConn = PooledConnection<RedisConnectionManager>;
+
 #[derive(Debug, Clone)]
 pub struct RedisDb {
     pub client: Pool<RedisConnectionManager>,
@@ -20,9 +22,12 @@ impl RedisDb {
         info!("Redis connected at: {}", addr);
         RedisDb { client: pool }
     }
+
     fn init_config(&self) {
         //todo logic set config into cache
+        unimplemented!();
     }
+
     pub fn set(&self, msg: RedisMessage) -> Result<bool> {
         let mut conn = self.client.get().unwrap();
         match msg.tag {
@@ -113,39 +118,7 @@ impl RedisDb {
         }
     }
 }
-#[derive(Clone, Debug)]
-pub enum RedisTag {
-    SET,
-    HSET,
-    SETBIT,
-    HMSET,
-    INCR,
-    GET,
-    HGET,
-    HGETALL,
-    GETBIT,
-    DEL,
-    HDEL,
-}
-#[derive(Clone, Debug)]
-pub struct RedisMessage {
-    pub tag: RedisTag,
-    pub key: RedisKeys,
-    pub field: Option<String>,
-    pub value: String,
-}
-#[derive(Clone, Debug)]
-pub struct RedisGetMessage {
-    pub tag: RedisTag,
-    pub key: RedisKeys,
-    pub field: Option<String>,
-}
-#[derive(Clone, Debug)]
-pub enum RedisKeys {
-    BadClient,
-    Blacklist,
-    Users,
-}
+
 impl RedisKeys {
     pub fn as_string(&self) -> String {
         let prefix = Config::get_env("REDIS_PREFIX");
@@ -153,7 +126,6 @@ impl RedisKeys {
             RedisKeys::BadClient => format!("{}_BadClient", &prefix).to_lowercase(),
             RedisKeys::Blacklist => format!("{}_Blacklist", &prefix).to_lowercase(),
             RedisKeys::Users => format!("{}_Users", &prefix).to_lowercase(),
-            _ => String::new(),
         }
     }
 }

@@ -1,14 +1,13 @@
-use crate::database::{
-    MysqlConn, RedisDb, RedisGetMessage, RedisKeys, RedisMessage, RedisTag, ResultDb,
-};
+use crate::database::enums::{RedisGetMessage, RedisKeys, RedisMessage, RedisTag};
+use crate::database::{MysqlConn, RedisDb, ResultDb};
 use crate::models::CRUD;
 use crate::schema::users;
 use crate::schema::users::dsl::*;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use diesel::{
-    delete, insert_into, result::Error, sql_query, update, ExpressionMethods, QueryDsl, RunQueryDsl,
-};
+use diesel::result::Error as DielselError;
+use diesel::{delete, insert_into, update};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 
 #[derive(Queryable, Eq, PartialEq, Debug, Deserialize, Clone, Serialize)]
 pub struct User {
@@ -18,6 +17,7 @@ pub struct User {
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
+
 impl User {
     pub fn parse_struct(txt: String) -> Option<Self> {
         match serde_json::from_str::<Self>(txt.as_str()) {
@@ -29,12 +29,14 @@ impl User {
         serde_json::to_string(self).unwrap()
     }
 }
+
 #[derive(Insertable, AsChangeset, Eq, PartialEq, Debug, Deserialize, Clone, Serialize)]
 #[table_name = "users"]
 pub struct NewUser {
     pub username: String,
     pub password: String,
 }
+
 impl NewUser {
     pub fn new(user_name: String, passwd: String) -> Self {
         NewUser {
@@ -42,16 +44,19 @@ impl NewUser {
             password: passwd,
         }
     }
+
     pub fn parser_from_str(txt: &str) -> Option<Self> {
         match serde_json::from_str::<Self>(txt) {
             Ok(value) => Some(value),
             _ => None,
         }
     }
+
     pub fn validate(&self) -> bool {
         self.username.len() > 3 && self.password.len() > 5
     }
 }
+
 impl CRUD<NewUser> for User {
     fn find_all(limit: i64, conn: &MysqlConn, _redis: RedisDb) -> ResultDb<Vec<Self>> {
         users.limit(limit).load::<Self>(conn)
@@ -82,7 +87,7 @@ impl CRUD<NewUser> for User {
                 });
                 Ok(user)
             }
-            _ => Err(Error::NotFound),
+            _ => Err(DielselError::NotFound),
         }
     }
 
@@ -111,7 +116,7 @@ impl CRUD<NewUser> for User {
                 });
                 Ok(user)
             }
-            _ => Err(Error::NotFound),
+            _ => Err(DielselError::NotFound),
         }
     }
 
@@ -127,7 +132,7 @@ impl CRUD<NewUser> for User {
                 });
                 return Self::find_by_name(value.username.clone(), conn, redis);
             }
-            _ => Err(Error::NotFound),
+            _ => Err(DielselError::NotFound),
         }
     }
 
@@ -143,7 +148,7 @@ impl CRUD<NewUser> for User {
                 });
                 return Self::find_by_id(uid, conn, redis);
             }
-            _ => Err(Error::NotFound),
+            _ => Err(DielselError::NotFound),
         }
     }
 

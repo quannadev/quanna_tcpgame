@@ -18,6 +18,7 @@ chrono = { version = "0.4", features = ["serde"] }
 [dependencies.amethyst]
 version = "0.15"
 features = ["empty"]
+
 [dependencies.diesel]
 version = "1.4.3"
 features= ["mysql", "chrono", "r2d2"]
