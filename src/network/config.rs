@@ -9,6 +9,7 @@ pub struct Config {
     pub redis_uri: String,
     pub redis_prefix: String,
 }
+
 impl Default for Config {
     fn default() -> Self {
         dotenv::dotenv().ok();
@@ -18,35 +19,38 @@ impl Default for Config {
         Self::internal_init(addr, redis_uri, redis_prefix)
     }
 }
+
 impl Config {
+    #[allow(dead_code)]
     pub fn new(addr: String) -> Self {
         dotenv::dotenv().ok();
         let redis_uri = Self::get_env("REDIS_URI");
         let redis_prefix = Self::get_env("REDIS_PREFIX");
         Self::internal_init(addr, redis_uri, redis_prefix)
     }
+
     pub fn logger_config() -> LoggerConfig {
         LoggerConfig {
-            stdout: StdoutLog::Colored,
+            allow_env_override: true,
             level_filter: LevelFilter::Info,
             log_file: None,
-            allow_env_override: true,
             log_gfx_backend_level: Some(LevelFilter::Warn),
             log_gfx_rendy_level: Some(LevelFilter::Warn),
             module_levels: vec![],
+            stdout: StdoutLog::Colored,
         }
     }
+
     pub fn get_env(key: &str) -> String {
-        match env::var(&key) {
-            Ok(value) => value,
-            Err(_) => match dotenv::var(&key) {
-                Ok(value) => value,
-                Err(_) => panic!("Missing key in env"),
-            },
-        }
+        let panic_msg = format!("Missing env var {}", key);
+        let dotenv_get = |_| dotenv::var(&key).expect(&panic_msg);
+        env::var(&key).unwrap_or_else(dotenv_get)
     }
+
     fn internal_init(addr: String, redis_uri: String, redis_prefix: String) -> Self {
-        start_logger(Self::logger_config());
+        let cfg = Self::logger_config();
+        start_logger(cfg);
+
         Self {
             addr,
             buffer_size: 2048,

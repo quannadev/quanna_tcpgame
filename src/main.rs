@@ -13,6 +13,7 @@ use amethyst::Result as AmethystResult;
 use network::{Config, Networking};
 
 fn main() -> AmethystResult<()> {
-    Networking::new(Config::default());
+    let config = Config::default();
+    Networking::init(config);
     Ok(())
 }
