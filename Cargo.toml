@@ -13,8 +13,11 @@ rand = "0.7.3"
 serde = { version = "1.0.106" , features = ["derive"] }
 serde_json = "1.0.51"
 r2d2_redis = "0.13.0"
-
+chrono = { version = "0.4", features = ["serde"] }
 
 [dependencies.amethyst]
 version = "0.15"
 features = ["empty"]
+[dependencies.diesel]
+version = "1.4.3"
+features= ["mysql", "chrono", "r2d2"]

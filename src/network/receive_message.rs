@@ -1,5 +1,5 @@
+use crate::database::{MysqlDb, RedisDb};
 use crate::managers::connections::ConnectionManager;
-use crate::network::sender_message::SenderManager;
 use amethyst::{
     core::{bundle::SystemBundle, SystemDesc},
     ecs::{DispatcherBuilder, Read, System, SystemData, World, Write},
@@ -9,12 +9,14 @@ use amethyst::{
     Result,
 };
 
-#[derive(Debug)]
-pub struct SpamReceiveBundle;
+pub struct SpamReceiveBundle {
+    pub redis: RedisDb,
+    pub mysql: MysqlDb,
+}
 
 impl<'a, 'b> SystemBundle<'a, 'b> for SpamReceiveBundle {
     fn build(self, world: &mut World, builder: &mut DispatcherBuilder<'a, 'b>) -> Result<()> {
-        let manager = ConnectionManager::init();
+        let manager = ConnectionManager::init(self.redis, self.mysql);
         world.insert(manager);
         builder.add(
             ReceiveSystemDesc::default().build(world),

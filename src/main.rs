@@ -5,9 +5,15 @@ extern crate log;
 extern crate serde;
 #[macro_use]
 extern crate serde_json;
+#[macro_use]
+extern crate diesel;
+
 use amethyst::Result;
+mod database;
 mod managers;
+mod models;
 mod network;
+mod schema;
 use network::{Config, Networking};
 
 fn main() -> Result<()> {

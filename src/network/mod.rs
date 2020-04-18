@@ -7,27 +7,32 @@ use std::time::Duration;
 
 pub mod config;
 mod receive_message;
-mod sender_message;
 mod states;
 mod tcp_socket;
 
+use crate::database::{MysqlDb, RedisDb};
 pub use config::Config;
 use receive_message::SpamReceiveBundle;
 use states::GameState;
 use tcp_socket::TCPSocket;
 
-#[derive(Debug)]
 pub struct Networking {
     pub config: Config,
+    pub redis: RedisDb,
+    pub mysql: MysqlDb,
 }
 impl Networking {
     pub fn new(config: Config) {
+        let redis = RedisDb::init(config.redis_uri.as_str());
+        let mysql = MysqlDb::init(config.mysql_uri.as_str());
         Self {
             config: config.clone(),
+            redis: redis.clone(),
+            mysql: mysql.clone(),
         };
-        Self::init(config)
+        Self::init(config, redis, mysql)
     }
-    fn init(config: Config) {
+    fn init(config: Config, redis: RedisDb, mysql: MysqlDb) {
         let socket = TCPSocket::new(config.addr.as_str());
         let assets_dir = application_root_dir().unwrap().join("./");
         let game_data = GameDataBuilder::default()
@@ -36,7 +41,7 @@ impl Networking {
                 config.buffer_size,
             ))
             .unwrap()
-            .with_bundle(SpamReceiveBundle)
+            .with_bundle(SpamReceiveBundle { redis, mysql })
             .unwrap();
         let mut game = Application::build(assets_dir, GameState)
             .unwrap()
