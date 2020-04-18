@@ -1,8 +1,9 @@
 use crate::database::{MysqlDb, RedisDb};
 use crate::managers::messages::{Message, MessageManager};
-use amethyst::{ecs::Write, network::simulation::TransportResource, Result};
-use std::collections::HashMap;
-use std::net::{SocketAddr, TcpStream};
+use amethyst::ecs::Write;
+use amethyst::network::simulation::TransportResource;
+// use std::collections::HashMap;
+use std::net::SocketAddr;
 
 pub type SenderType<'a> = Write<'a, TransportResource>;
 
@@ -25,6 +26,7 @@ impl ConnectionManager {
     pub fn on_connect<'a>(&mut self, addr: &SocketAddr, sender: &mut SenderType) {
         self.list_conn.push(*addr);
         let msg = format!("New connect {}\r\n", &addr);
+        info!("{}", msg);
         self.send_without_me(sender, addr, Message::join_msg(&addr))
     }
 
@@ -34,6 +36,7 @@ impl ConnectionManager {
         if idx.is_some() {
             self.list_conn.remove(idx.unwrap());
             let msg = format!("Client {} disconnected \r\n", &addr);
+            info!("{}", msg);
             self.send_without_me(sender, addr, Message::exit_msg(&addr));
         }
 
@@ -47,10 +50,10 @@ impl ConnectionManager {
             sender.send(addr, msg_pared.to_vec_u8().as_ref())
         }
     }
+
     pub fn send_all<'a>(&mut self, sender: &mut SenderType, payload: Message) {
-        for socket in self.list_conn.iter() {
-            Self::send_message(*socket, payload.clone(), sender)
-        }
+        let send_data = |s: &SocketAddr| Self::send_message(*s, payload.clone(), sender);
+        self.list_conn.iter().for_each(send_data);
     }
 
     pub fn send_without_me<'a>(
