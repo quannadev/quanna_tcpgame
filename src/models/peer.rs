@@ -1,16 +1,18 @@
 use crate::managers::connections::SenderType;
 use crate::models::{PeerStatus, User};
+use chrono::{NaiveDateTime, Utc};
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Peer {
     pub id: String,
     pub addr: SocketAddr,
     pub is_login: bool,
     pub status: PeerStatus,
     pub user: User,
+    pub last_login: NaiveDateTime,
 }
 impl Peer {
     pub fn new(addr: SocketAddr, user: User, is_login: bool, status: PeerStatus) -> Self {
@@ -20,6 +22,7 @@ impl Peer {
             user,
             is_login,
             status,
+            last_login: Utc::now().naive_utc(),
         }
     }
     fn gen_id() -> String {

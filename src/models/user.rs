@@ -51,7 +51,9 @@ impl NewUser {
             _ => None,
         }
     }
-
+    pub fn as_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
     pub fn validate(&self) -> bool {
         self.username.len() > 3 && self.password.len() > 5
     }

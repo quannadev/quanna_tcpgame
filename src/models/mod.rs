@@ -1,10 +1,12 @@
 mod peer;
 mod peer_status;
+mod server_message;
 mod user;
 use crate::database::{MysqlConn, RedisDb, ResultDb};
 pub use peer::Peer;
 pub use peer_status::PeerStatus;
-pub use user::User;
+pub use server_message::ServerMessage;
+pub use user::{NewUser, User};
 
 pub trait CRUD<T> {
     fn find_all(limit: i64, conn: &MysqlConn, redis: RedisDb) -> ResultDb<Vec<Self>>

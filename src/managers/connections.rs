@@ -52,11 +52,16 @@ impl ConnectionManager {
         payload: &[u8],
         sender: &mut Write<TransportResource>,
     ) {
-        let mut message_manager = MessageManager::default();
+        let mut message_manager = MessageManager::new(self.redis.clone(), self.mysql.clone());
         let message = message_manager.parser(payload);
         if message.is_some() {
             let msg_pared = message.unwrap();
-            return message_manager.message_router(msg_pared, &addr, &mut self.peer_manager);
+            return message_manager.message_router(
+                msg_pared,
+                &addr,
+                &mut self.peer_manager,
+                sender,
+            );
         }
     }
 
