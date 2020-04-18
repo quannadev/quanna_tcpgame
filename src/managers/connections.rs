@@ -47,7 +47,7 @@ impl ConnectionManager {
         let message = MessageManager::default().parser(payload);
         if message.is_some() {
             let msg_pared = message.unwrap();
-            sender.send(addr, msg_pared.to_vec_u8().as_ref())
+            return sender.send(addr, msg_pared.to_vec_u8().as_ref());
         }
     }
 
