@@ -2,52 +2,13 @@ use crate::database::{MysqlConn, MysqlDb, RedisDb};
 use crate::managers::connections::SenderType;
 use crate::managers::peer_manager::PeerManager;
 use crate::models::{
-    MessageErrors, MessageSuccess, NewUser, Peer, PeerStatus, ServerMessage, User, CRUD,
+    Message, MessageErrors, MessageSuccess, MessageTags, NewUser, Peer, PeerStatus, ServerMessage,
+    User,
 };
+use crate::utils::CRUD;
 use chrono::{NaiveDateTime, Utc};
-use serde_json::Error as SerdeError;
 use std::net::SocketAddr;
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub enum MessageTags {
-    None,
-    Join,
-    Exit,
-    Config,
-    Login,
-    Register,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Message {
-    pub tag: MessageTags,
-    pub data: String,
-}
-
-impl Message {
-    pub fn parse_struct(txt: &str) -> Result<Self, SerdeError> {
-        let msg: Message = serde_json::from_str(txt)?;
-        Ok(msg)
-    }
-
-    pub fn to_vec_u8(&self) -> Vec<u8> {
-        serde_json::to_vec(self).unwrap()
-    }
-
-    pub fn join_msg(addr: &SocketAddr) -> Self {
-        Self {
-            tag: MessageTags::Join,
-            data: addr.to_string(),
-        }
-    }
-
-    pub fn exit_msg(addr: &SocketAddr) -> Self {
-        Self {
-            tag: MessageTags::Exit,
-            data: addr.to_string(),
-        }
-    }
-}
 #[derive(Clone)]
 pub struct MessageManager {
     redis: RedisDb,
@@ -112,6 +73,7 @@ impl MessageManager {
                                         true,
                                         PeerStatus::Lobby,
                                         Utc::now().naive_utc(),
+                                        peer.room_id.clone(),
                                     );
                                     peer_manager.update_peer(&peer_update);
                                 }

@@ -10,11 +10,14 @@ extern crate diesel;
 
 use amethyst::Result as AmethystResult;
 
+mod applications;
 mod database;
 mod managers;
 mod models;
 mod network;
+mod operations;
 mod schema;
+mod utils;
 
 use network::{Config, Networking};
 

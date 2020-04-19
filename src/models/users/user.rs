@@ -1,8 +1,8 @@
 use crate::database::enums::{RedisGetMessage, RedisKeys, RedisMessage, RedisTag};
 use crate::database::{MysqlConn, RedisDb, ResultDb};
-use crate::models::CRUD;
 use crate::schema::users;
 use crate::schema::users::dsl::*;
+use crate::utils::CRUD;
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;

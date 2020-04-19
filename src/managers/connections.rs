@@ -1,6 +1,7 @@
 use crate::database::{MysqlDb, RedisDb};
-use crate::managers::messages::{Message, MessageManager};
+use crate::managers::messages::MessageManager;
 use crate::managers::PeerManager;
+use crate::models::Message;
 use amethyst::ecs::Write;
 use amethyst::network::simulation::TransportResource;
 use std::net::SocketAddr;

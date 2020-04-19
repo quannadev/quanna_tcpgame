@@ -1,4 +1,4 @@
-use crate::managers::messages::MessageTags;
+use crate::models::MessageTags;
 use serde_json::Error as SerdeError;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

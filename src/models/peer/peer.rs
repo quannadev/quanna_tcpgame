@@ -12,6 +12,7 @@ pub struct Peer {
     pub is_login: bool,
     pub status: PeerStatus,
     pub user_name: String,
+    pub room_id: i32,
     pub user: User,
     pub last_login: NaiveDateTime,
 }
@@ -25,6 +26,7 @@ impl Peer {
             is_login,
             status,
             last_login: Utc::now().naive_utc(),
+            room_id: 0,
         }
     }
     pub fn update_data(
@@ -34,12 +36,14 @@ impl Peer {
         is_login: bool,
         status: PeerStatus,
         time: NaiveDateTime,
+        room_id: i32,
     ) -> Self {
         self.status = status;
         self.last_login = time;
         self.user = user;
         self.is_login = is_login;
         self.addr = addr;
+        self.room_id = room_id;
         self.clone()
     }
     fn gen_id() -> String {

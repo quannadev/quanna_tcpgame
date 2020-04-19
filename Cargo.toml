@@ -22,3 +22,5 @@ features = ["empty"]
 [dependencies.diesel]
 version = "1.4.3"
 features= ["mysql", "chrono", "r2d2"]
+[dependencies.ws]
+version = "0.9.1"

@@ -5,6 +5,7 @@ use std::env;
 #[derive(Debug, Clone)]
 pub struct Config {
     pub addr: String,
+    pub ws_addr: String,
     pub buffer_size: usize,
     pub redis_uri: String,
     pub redis_prefix: String,
@@ -15,20 +16,21 @@ impl Default for Config {
     fn default() -> Self {
         dotenv::dotenv().ok();
         let addr = "127.0.0.1:4567".to_string();
+        let ws_addr = "127.0.0.1:4568".to_string();
         let redis_uri = Self::get_env("REDIS_URI");
         let redis_prefix = Self::get_env("REDIS_PREFIX");
         let mysql_uri = Self::get_env("DATABASE_URL");
-        Self::internal_init(addr, redis_uri, redis_prefix, mysql_uri)
+        Self::internal_init(addr, redis_uri, redis_prefix, mysql_uri, ws_addr)
     }
 }
 
 impl Config {
-    pub fn new(addr: String) -> Self {
+    pub fn new(addr: String, ws_addr: String) -> Self {
         dotenv::dotenv().ok();
         let redis_uri = Self::get_env("REDIS_URI");
         let redis_prefix = Self::get_env("REDIS_PREFIX");
         let mysql_uri = Self::get_env("DATABASE_URL");
-        Self::internal_init(addr, redis_uri, redis_prefix, mysql_uri)
+        Self::internal_init(addr, redis_uri, redis_prefix, mysql_uri, ws_addr)
     }
 
     pub fn logger_config() -> LoggerConfig {
@@ -54,6 +56,7 @@ impl Config {
         redis_uri: String,
         redis_prefix: String,
         mysql_uri: String,
+        ws_addr: String,
     ) -> Self {
         let cfg = Self::logger_config();
         start_logger(cfg);
@@ -64,6 +67,7 @@ impl Config {
             redis_uri,
             redis_prefix,
             mysql_uri,
+            ws_addr,
         }
     }
 }

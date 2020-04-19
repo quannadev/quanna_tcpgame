@@ -6,19 +6,17 @@ use amethyst::network::simulation::{NetworkSimulationEvent, TransportResource};
 use amethyst::shrev::{EventChannel, ReaderId};
 use amethyst::Result as AmethystResult;
 
-pub struct SpamReceiveBundle {
-    pub redis: RedisDb,
-    pub mysql: MysqlDb,
+pub struct TCPReceiveConnection {
+    pub connection: ConnectionManager,
 }
 
-impl<'a, 'b> SystemBundle<'a, 'b> for SpamReceiveBundle {
+impl<'a, 'b> SystemBundle<'a, 'b> for TCPReceiveConnection {
     fn build(
         self,
         world: &mut World,
         builder: &mut DispatcherBuilder<'a, 'b>,
     ) -> AmethystResult<()> {
-        let manager = ConnectionManager::init(self.redis, self.mysql);
-        world.insert(manager);
+        world.insert(self.connection);
         builder.add(
             ReceiveSystemDesc::default().build(world),
             "receiving_system",
