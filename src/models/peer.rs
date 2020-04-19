@@ -7,23 +7,40 @@ use std::net::SocketAddr;
 
 #[derive(Clone, Debug)]
 pub struct Peer {
-    pub id: String,
+    pub id: i32,
     pub addr: SocketAddr,
     pub is_login: bool,
     pub status: PeerStatus,
+    pub user_name: String,
     pub user: User,
     pub last_login: NaiveDateTime,
 }
 impl Peer {
     pub fn new(addr: SocketAddr, user: User, is_login: bool, status: PeerStatus) -> Self {
         Self {
-            id: Peer::gen_id(),
+            id: user.id.clone(),
             addr,
+            user_name: user.username.clone(),
             user,
             is_login,
             status,
             last_login: Utc::now().naive_utc(),
         }
+    }
+    pub fn update_data(
+        &mut self,
+        addr: SocketAddr,
+        user: User,
+        is_login: bool,
+        status: PeerStatus,
+        time: NaiveDateTime,
+    ) -> Self {
+        self.status = status;
+        self.last_login = time;
+        self.user = user;
+        self.is_login = is_login;
+        self.addr = addr;
+        self.clone()
     }
     fn gen_id() -> String {
         let mut rgn = thread_rng();

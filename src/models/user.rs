@@ -28,6 +28,21 @@ impl User {
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
+
+    pub fn login(form: &NewUser, conn: &MysqlConn, redis: RedisDb) -> Option<Self> {
+        match Self::find_by_name(form.username.clone(), conn, redis) {
+            Ok(user) => {
+                if user.verify_password(form.password.as_str()) {
+                    return Some(user);
+                }
+                None
+            }
+            _ => None,
+        }
+    }
+    fn verify_password(&self, passwd: &str) -> bool {
+        self.password.eq(passwd)
+    }
 }
 
 #[derive(Insertable, AsChangeset, Eq, PartialEq, Debug, Deserialize, Clone, Serialize)]
@@ -123,6 +138,10 @@ impl CRUD<NewUser> for User {
     }
 
     fn insert(value: &NewUser, conn: &MysqlConn, redis: RedisDb) -> ResultDb<Self> {
+        let check = Self::find_by_name(value.username.clone(), conn, redis.clone());
+        if check.is_ok() {
+            return Err(DieselError::NotFound);
+        }
         let user = insert_into(users).values(value.clone()).execute(conn);
         match user {
             Ok(user) => {

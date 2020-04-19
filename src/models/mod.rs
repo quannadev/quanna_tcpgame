@@ -1,8 +1,10 @@
+mod messages_noti;
 mod peer;
 mod peer_status;
 mod server_message;
 mod user;
 use crate::database::{MysqlConn, RedisDb, ResultDb};
+pub use messages_noti::{MessageErrors, MessageSuccess};
 pub use peer::Peer;
 pub use peer_status::PeerStatus;
 pub use server_message::ServerMessage;

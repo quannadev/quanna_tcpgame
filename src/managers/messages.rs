@@ -1,7 +1,10 @@
 use crate::database::{MysqlConn, MysqlDb, RedisDb};
 use crate::managers::connections::SenderType;
 use crate::managers::peer_manager::PeerManager;
-use crate::models::{NewUser, Peer, PeerStatus, ServerMessage, User, CRUD};
+use crate::models::{
+    MessageErrors, MessageSuccess, NewUser, Peer, PeerStatus, ServerMessage, User, CRUD,
+};
+use chrono::{NaiveDateTime, Utc};
 use serde_json::Error as SerdeError;
 use std::net::SocketAddr;
 
@@ -32,10 +35,9 @@ impl Message {
     }
 
     pub fn join_msg(addr: &SocketAddr) -> Self {
-        let usr = NewUser::new("quanna".to_string(), "1234456".to_string());
         Self {
             tag: MessageTags::Join,
-            data: usr.as_string(),
+            data: addr.to_string(),
         }
     }
 
@@ -63,6 +65,7 @@ impl MessageManager {
             Err(_) => None,
         }
     }
+    /*Routing Message Tags*/
     pub fn message_router(
         &mut self,
         msg: Message,
@@ -73,67 +76,88 @@ impl MessageManager {
         let db = self.db.clone().conn.get().unwrap();
         let redis = self.redis.clone();
         let mut response_msg = ServerMessage::default();
-        let peer_old = peer_manager.find_peer_by_addr(&owner_addr.clone());
+        let peer_manager_clone = peer_manager.clone();
         match msg.tag {
             MessageTags::Login => {
                 response_msg.tag = MessageTags::Login;
-                if peer_old.is_some() {
-                    let peer_data = peer_old.unwrap();
-                } else {
-                    let data_txt = msg.data.replace("\\", "");
-                    //{"tag":"Login","data":"{\"username\":\"admin\",\"password\":\"123456\"}"}
-                    let data_login = NewUser::parser_from_str(data_txt.as_str());
-                    if data_login.is_some() {
-                        let user_form = data_login.unwrap();
+                let data_txt = msg.data.replace("\\", "");
+                /*
+                {"tag":"Login","data":"{\"username\":\"admin\",\"password\":\"123456\"}"}
+                */
+                let data_login = NewUser::parser_from_str(data_txt.as_str());
+                if data_login.is_some() {
+                    let user_form = data_login.unwrap();
+                    let current_peer =
+                        peer_manager_clone.find_by_username(user_form.username.clone().as_str());
+                    if current_peer.is_none() {
                         if user_form.validate() {
-                            let user_data = User::find_by_name(user_form.username, &db, redis);
-                            if user_data.is_ok() {
+                            let user_data = User::login(&user_form, &db, redis);
+                            if user_data.is_some() {
                                 let user = user_data.unwrap();
-                                let peer = Peer::new(
-                                    owner_addr.clone(),
-                                    user.clone(),
-                                    true,
-                                    PeerStatus::Lobby,
-                                );
-                                peer_manager.add_peer(peer);
+                                let old_peer = peer_manager_clone.find_by_id(user.id.clone());
+                                /*Logic Reconnect*/
+                                if old_peer.is_none() {
+                                    let peer = Peer::new(
+                                        owner_addr.clone(),
+                                        user.clone(),
+                                        true,
+                                        PeerStatus::Lobby,
+                                    );
+                                    peer_manager.add_peer(peer);
+                                } else {
+                                    let mut peer = old_peer.unwrap();
+                                    let peer_update = peer.update_data(
+                                        owner_addr.clone(),
+                                        user.clone(),
+                                        true,
+                                        PeerStatus::Lobby,
+                                        Utc::now().naive_utc(),
+                                    );
+                                    peer_manager.update_peer(&peer_update);
+                                }
                                 response_msg.status = true;
-                                response_msg.message = Some("Login success".to_string());
+                                response_msg.message = Some(MessageSuccess::Login.to_string());
                                 response_msg.data = Some(user.to_string());
                                 return sender
                                     .send(owner_addr.clone(), response_msg.to_vec_u8().as_ref());
                             }
+                            response_msg.message = Some(MessageErrors::UsnOrPwdInvalid.to_string())
                         }
+                    }
+                    let last_peer_data = current_peer.unwrap();
+                    if last_peer_data.is_login {
+                        response_msg.message = Some(MessageErrors::Logged.to_string());
                     }
                 }
             }
             MessageTags::Register => {
                 response_msg.tag = MessageTags::Register;
-                if peer_old.is_some() {
-                    let peer_data = peer_old.unwrap();
-                } else {
-                    let data_txt = msg.data.replace("\\", "");
-                    //{"tag":"Register","data":"{\"username\":\"admin\",\"password\":\"123456\"}"}
-                    let data_login = NewUser::parser_from_str(data_txt.as_str());
-                    if data_login.is_some() {
-                        let user_form = data_login.unwrap();
-                        if user_form.validate() {
-                            let user_data = User::insert(&user_form, &db, redis);
-                            if user_data.is_ok() {
-                                let user = user_data.unwrap();
-                                let peer = Peer::new(
-                                    owner_addr.clone(),
-                                    user.clone(),
-                                    true,
-                                    PeerStatus::Lobby,
-                                );
-                                peer_manager.add_peer(peer);
-                                response_msg.status = true;
-                                response_msg.message = Some("Register success".to_string());
-                                response_msg.data = Some(user.to_string());
-                                return sender
-                                    .send(owner_addr.clone(), response_msg.to_vec_u8().as_ref());
-                            }
+                let data_txt = msg.data.replace("\\", "");
+                //{"tag":"Register","data":"{\"username\":\"admin\",\"password\":\"123456\"}"}
+                let data_login = NewUser::parser_from_str(data_txt.as_str());
+                if data_login.is_some() {
+                    let user_form = data_login.unwrap();
+                    if user_form.validate() {
+                        let user_data = User::insert(&user_form, &db, redis);
+                        if user_data.is_ok() {
+                            let user = user_data.unwrap();
+                            let peer = Peer::new(
+                                owner_addr.clone(),
+                                user.clone(),
+                                true,
+                                PeerStatus::Lobby,
+                            );
+                            peer_manager.add_peer(peer);
+                            response_msg.status = true;
+                            response_msg.message = Some(MessageSuccess::Register.to_string());
+                            response_msg.data = Some(user.to_string());
+                            return sender
+                                .send(owner_addr.clone(), response_msg.to_vec_u8().as_ref());
+                        } else {
+                            response_msg.message = Some(MessageErrors::UsernameExist.to_string());
                         }
+                    } else {
+                        response_msg.message = Some(MessageErrors::UsnOrPwdInvalid.to_string());
                     }
                 }
             }
